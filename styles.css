@@ -1,0 +1,130 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #faf8ef;
+}
+
+.container {
+    text-align: center;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: #776e65;
+    margin: 0;
+}
+
+.score-container {
+    background-color: #bbada0;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 100px);
+    grid-template-rows: repeat(4, 100px);
+    gap: 15px;
+    background-color: #bbada0;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.tile {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 36px;
+    font-weight: bold;
+    border-radius: 5px;
+    background-color: rgba(238, 228, 218, 0.35);
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform: translate(0, 0);
+    will-change: transform;
+}
+
+.tile.ghost {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.tile.moving {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+.tile:empty {
+    background-color: rgba(238, 228, 218, 0.35);
+}
+
+.tile-2 { background-color: #eee4da; color: #776e65; }
+.tile-4 { background-color: #ede0c8; color: #776e65; }
+.tile-8 { background-color: #f2b179; color: white; }
+.tile-16 { background-color: #f59563; color: white; }
+.tile-32 { background-color: #f67c5f; color: white; }
+.tile-64 { background-color: #f65e3b; color: white; }
+.tile-128 { background-color: #edcf72; color: white; }
+.tile-256 { background-color: #edcc61; color: white; }
+.tile-512 { background-color: #edc850; color: white; }
+.tile-1024 { background-color: #edc53f; color: white; }
+.tile-2048 { background-color: #edc22e; color: white; }
+
+.tile.new-tile {
+    animation: spawn 0.15s ease-in-out;
+    animation-fill-mode: backwards;
+}
+
+.tile.merge {
+    animation: merge 0.3s ease-in-out;
+}
+
+@keyframes spawn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes merge {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.tile.move-up { transform: translateY(-115px); }
+.tile.move-down { transform: translateY(115px); }
+.tile.move-left { transform: translateX(-115px); }
+.tile.move-right { transform: translateX(115px); }
+
+.instructions {
+    margin-top: 20px;
+    color: #776e65;
+}
