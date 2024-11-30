@@ -31,19 +31,19 @@ class Game2048 {
     setupEventListeners() {
         document.addEventListener('keydown', (e) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.preventDefault(); // Prevent page scrolling
+                e.preventDefault();
                 const beforeMove = JSON.stringify(this.board);
                 
                 switch(e.key) {
-                    case 'ArrowUp': this.move('up'); break;
-                    case 'ArrowDown': this.move('down'); break;
-                    case 'ArrowLeft': this.move('left'); break;
-                    case 'ArrowRight': this.move('right'); break;
+                    case 'ArrowUp': this.moveUp(); break;
+                    case 'ArrowDown': this.moveDown(); break;
+                    case 'ArrowLeft': this.moveLeft(); break;
+                    case 'ArrowRight': this.moveRight(); break;
                 }
 
                 const afterMove = JSON.stringify(this.board);
                 if (beforeMove !== afterMove) {
-                    this.addRandomTile();
+                    // We'll handle addRandomTile in the animation callback
                     this.renderBoard();
                 }
             }
@@ -181,7 +181,7 @@ class Game2048 {
         const cells = this.gameBoard.children;
         const cellSize = 115;
         const usedSourceCells = new Set();
-        const mergeAnimations = new Map(); // Track merge animations
+        const mergeAnimations = new Map();
 
         // Clear all moving tiles first
         for (let i = 0; i < cells.length; i++) {
@@ -228,25 +228,59 @@ class Game2048 {
                     const rowDiff = newPos.r - prevPos.r;
                     const colDiff = newPos.c - prevPos.c;
 
-                    // Scoring logic
-                    if (primaryDirection === 'down' && rowDiff < 0) score += 1000;
-                    if (primaryDirection === 'up' && rowDiff > 0) score += 1000;
-                    if (primaryDirection === 'right' && colDiff < 0) score += 1000;
-                    if (primaryDirection === 'left' && colDiff > 0) score += 1000;
-                    
-                    score += Math.abs(rowDiff) + Math.abs(colDiff);
-                    
-                    if ((primaryDirection === 'up' || primaryDirection === 'down') && colDiff !== 0) score += 500;
-                    if ((primaryDirection === 'left' || primaryDirection === 'right') && rowDiff !== 0) score += 500;
+                    // Base score on distance in primary movement direction
+                    if (primaryDirection === 'down' || primaryDirection === 'up') {
+                        // For vertical movement, prioritize same column
+                        score = Math.abs(colDiff) * 1000; // Heavy penalty for column changes
+                        score += primaryDirection === 'down' ? -rowDiff : rowDiff; // Prioritize based on direction
+                    } else {
+                        // For horizontal movement, prioritize same row
+                        score = Math.abs(rowDiff) * 1000; // Heavy penalty for row changes
+                        score += primaryDirection === 'right' ? -colDiff : colDiff; // Prioritize based on direction
+                    }
 
-                    sourceTiles.push({ pos: prevPos, score });
+                    sourceTiles.push({ pos: prevPos, score, rowDiff, colDiff });
                 }
             }
 
-            // Sort source tiles by score
+            // Sort source tiles by score and filter for direction
             sourceTiles.sort((a, b) => a.score - b.score);
 
-            // For merge, we need two source tiles
+            // For merges, ensure we pick tiles that maintain direction
+            if (isMergeDestination && sourceTiles.length >= 2) {
+                const filteredTiles = [];
+                const firstTile = sourceTiles[0];
+                
+                // Add the first tile
+                filteredTiles.push(firstTile);
+                
+                // Find a complementary tile that maintains direction
+                for (let i = 1; i < sourceTiles.length; i++) {
+                    const tile = sourceTiles[i];
+                    let isValidPair = false;
+
+                    if (primaryDirection === 'down' || primaryDirection === 'up') {
+                        // For vertical movement, tiles should be in the same column as target
+                        isValidPair = tile.colDiff === firstTile.colDiff;
+                    } else {
+                        // For horizontal movement, tiles should be in the same row as target
+                        isValidPair = tile.rowDiff === firstTile.rowDiff;
+                    }
+
+                    if (isValidPair) {
+                        filteredTiles.push(tile);
+                        break;
+                    }
+                }
+
+                // Use filtered tiles if we found a valid pair
+                if (filteredTiles.length === 2) {
+                    sourceTiles.length = 0;
+                    sourceTiles.push(...filteredTiles);
+                }
+            }
+
+            // Select tiles to animate
             const tilesToAnimate = isMergeDestination ? 
                 sourceTiles.slice(0, 2) : 
                 sourceTiles.slice(0, 1);
@@ -301,7 +335,7 @@ class Game2048 {
             }
         }, 150);
 
-        // Final cleanup
+        // Final cleanup and new tile spawn
         setTimeout(() => {
             // Clear all cells first
             for (let i = 0; i < cells.length; i++) {
@@ -311,6 +345,11 @@ class Game2048 {
             }
             // Render the final state
             this.renderBoard();
+            
+            // Add new tile with a slight delay after movement completes
+            setTimeout(() => {
+                this.addRandomTile();
+            }, 50); // Small delay for visual separation
         }, 300);
     }
 
@@ -352,6 +391,22 @@ class Game2048 {
 
     transposeBoard(board) {
         return board[0].map((_, colIndex) => board.map(row => row[colIndex]));
+    }
+
+    moveUp() {
+        this.move('up');
+    }
+
+    moveDown() {
+        this.move('down');
+    }
+
+    moveLeft() {
+        this.move('left');
+    }
+
+    moveRight() {
+        this.move('right');
     }
 }
 
